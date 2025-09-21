@@ -7,7 +7,10 @@ class PokemonsProvider extends ChangeNotifier {
   final PokemonService _pokemonService = PokemonService();
   final List<Pokemon> _pokemons = [];
   final int _limit = 20;
+
   bool _isLoading = false;
+
+  bool get isLoading => _isLoading;
 
   List<Pokemon> get pokemons => _pokemons;
 
@@ -22,7 +25,9 @@ class PokemonsProvider extends ChangeNotifier {
 
   Future<void> loadMorePokemons() async {
     if (_isLoading) return;
+
     _isLoading = true;
+    notifyListeners();
 
     try {
       final newPokemons = await _pokemonService.fetchPokemons(
@@ -30,11 +35,11 @@ class PokemonsProvider extends ChangeNotifier {
         limit: _limit,
       );
       _pokemons.addAll(newPokemons);
-      notifyListeners();
     } catch (e) {
       debugPrint('Erro ao carregar Pokémons: $e');
     } finally {
       _isLoading = false;
+      notifyListeners();
     }
   }
 }

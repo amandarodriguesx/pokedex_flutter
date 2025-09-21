@@ -67,7 +67,17 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image(image: NetworkImage(_detailedPokemon.imageUrl)),
+                  Image.network(
+                    _detailedPokemon.imageUrl,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const SizedBox(
+                        width: 100,
+                        height: 100,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
+                  ),
                   Text('Nome: ${_detailedPokemon.name}'),
                   Text('ID: ${_detailedPokemon.id}'),
                   Text('Altura: ${_detailedPokemon.height / 10} m'),

@@ -57,6 +57,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   @override
   Widget build(BuildContext context) {
     final pokemons = context.watch<PokemonsProvider>().pokemons;
+    final isLoading = context.watch<PokemonsProvider>().isLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F5),
@@ -66,34 +67,44 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             _buildAppBar(),
             _buildSearchField(),
             Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(10.0),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.2,
+              child: isLoading && pokemons.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      children: [
+                        Expanded(
+                          child: GridView.builder(
+                            padding: const EdgeInsets.all(10.0),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1.2,
+                                ),
+                            itemCount: pokemons.length,
+                            itemBuilder: (context, index) {
+                              final pokemon = pokemons[index];
+                              return _buildPokemonCard(pokemon);
+                            },
                           ),
-                      itemCount: pokemons.length,
-                      itemBuilder: (context, index) {
-                        final pokemon = pokemons[index];
-                        return _buildPokemonCard(pokemon);
-                      },
+                        ),
+                        if (isLoading)
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        if (!isLoading)
+                          ElevatedButton(
+                            onPressed: () {
+                              context
+                                  .read<PokemonsProvider>()
+                                  .loadMorePokemons();
+                            },
+                            child: const Text('Carregar mais'),
+                          ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<PokemonsProvider>().loadMorePokemons();
-                    },
-                    child: const Text('Carregar mais'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
             ),
           ],
         ),
@@ -182,6 +193,14 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                   child: Image.network(
                     'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png',
                     fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.error),
                   ),
                 ),
               ),
