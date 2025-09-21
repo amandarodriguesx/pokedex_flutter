@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/pokemon_models.dart';
 
-
 class PokemonService {
   final String _baseUrl = 'https://pokeapi.co/api/v2/pokemon';
 
-  Future<List<Pokemon>> fetchPokemons({int offset = 0, int limit = 20}) async {
+  Future<List<Pokemon>> fetchPokemons({int offset = 0, int limit = 10}) async {
     try {
-      final response =
-      await http.get(Uri.parse('$_baseUrl?offset=$offset&limit=$limit'));
+      final response = await http.get(
+        Uri.parse('$_baseUrl?offset=$offset&limit=$limit'),
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -41,7 +41,9 @@ class PokemonService {
 
   Future<PokemonDetails> searchPokemon(String query) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/${query.toLowerCase()}'));
+      final response = await http.get(
+        Uri.parse('$_baseUrl/${query.toLowerCase()}'),
+      );
 
       if (response.statusCode == 200) {
         return PokemonDetails.fromJson(json.decode(response.body));

@@ -3,20 +3,12 @@ class Pokemon {
   final String url;
   final int id;
 
-  Pokemon({
-    required this.name,
-    required this.url,
-    required this.id,
-  });
+  Pokemon({required this.name, required this.url, required this.id});
 
   factory Pokemon.fromJson(Map<String, dynamic> json) {
     final String url = json['url'];
     final int id = int.parse(url.split('/')[6]);
-    return Pokemon(
-      name: json['name'],
-      url: json['url'],
-      id: id,
-    );
+    return Pokemon(name: json['name'], url: json['url'], id: id);
   }
 }
 
@@ -26,6 +18,8 @@ class PokemonDetails {
   final List<String> types;
   final String imageUrl;
   final List<String> abilities;
+  final int height;
+  final int weight;
 
   PokemonDetails({
     required this.id,
@@ -33,15 +27,19 @@ class PokemonDetails {
     required this.types,
     required this.imageUrl,
     required this.abilities,
+    required this.height,
+    required this.weight,
   });
 
   factory PokemonDetails.fromJson(Map<String, dynamic> json) {
-    final List<String> types =
-    (json['types'] as List).map((t) => t['type']['name'].toString()).toList();
+    final List<String> types = (json['types'] as List)
+        .map((t) => t['type']['name'].toString())
+        .toList();
     final List<String> abilities = (json['abilities'] as List)
         .map((a) => a['ability']['name'].toString())
         .toList();
-    final String imageUrl = json['sprites']['other']['official-artwork']['front_default'];
+    final String imageUrl =
+        json['sprites']['other']['official-artwork']['front_default'];
 
     return PokemonDetails(
       id: json['id'],
@@ -49,6 +47,8 @@ class PokemonDetails {
       types: types,
       imageUrl: imageUrl,
       abilities: abilities,
+      height: json['height'],
+      weight: json['weight'],
     );
   }
 }

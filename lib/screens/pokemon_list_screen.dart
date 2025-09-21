@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pokedex_somativo01/models/pokemon_models.dart';
-import 'package:pokedex_somativo01/services/pokemon_service.dart';
-
+import 'package:pokedex_somativo01/screens/favoritos_screen.dart';
+import 'package:pokedex_somativo01/screens/pokemon_details_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:pokedex_somativo01/providers/pokemons_provider.dart';
 
 class PokemonListScreen extends StatefulWidget {
   const PokemonListScreen({super.key});
@@ -11,50 +13,36 @@ class PokemonListScreen extends StatefulWidget {
 }
 
 class _PokemonListScreenState extends State<PokemonListScreen> {
-  final PokemonService _pokemonService = PokemonService();
   final TextEditingController _searchController = TextEditingController();
-  late Future<List<Pokemon>> _pokemonsFuture;
-
-  List<Pokemon> _pokemons = [];
-  final int _limit = 20;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _pokemonsFuture = _pokemonService.fetchPokemons(offset: 0, limit: _limit);
-  }
-
-  Future<void> _loadMorePokemons() async {
-    try {
-      final newPokemons = await _pokemonService.fetchPokemons(
-          offset: _pokemons.length, limit: _limit);
-      setState(() {
-        _pokemons.addAll(newPokemons);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load more Pokémon.')),
-      );
-    }
+    Future.microtask(() => context.read<PokemonsProvider>().loadMorePokemons());
   }
 
   Future<void> _searchPokemon() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, digite um nome ou número de Pokémon.')),
+        const SnackBar(content: Text('Digite o nome ou número do Pokémon.')),
       );
       return;
     }
 
-    try {
-      final pokemonDetails = await _pokemonService.searchPokemon(query);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pokémon ${pokemonDetails.name} encontrado!')),
+    final pokemon = context.read<PokemonsProvider>().searchPokemon(query);
+
+    if (pokemon != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PokemonDetailsScreen(pokemon: pokemon),
+        ),
       );
-    } catch (e) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro na busca: Pokémon não encontrado.')),
+        const SnackBar(content: Text('Pokémon não encontrado na lista.')),
       );
     }
   }
@@ -68,6 +56,8 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pokemons = context.watch<PokemonsProvider>().pokemons;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F5),
       body: SafeArea(
@@ -76,45 +66,33 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             _buildAppBar(),
             _buildSearchField(),
             Expanded(
-              child: FutureBuilder<List<Pokemon>>(
-                future: _pokemonsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                        child: Text('Error loading Pokémon: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('No Pokémon found.'));
-                  }
-
-                  if (_pokemons.isEmpty) {
-                    _pokemons = snapshot.data!;
-                  }
-
-                  return NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification scrollInfo) {
-                      if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                        _loadMorePokemons();
-                      }
-                      return false;
-                    },
+              child: Column(
+                children: [
+                  Expanded(
                     child: GridView.builder(
                       padding: const EdgeInsets.all(10.0),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.2,
-                      ),
-                      itemCount: _pokemons.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.2,
+                          ),
+                      itemCount: pokemons.length,
                       itemBuilder: (context, index) {
-                        final pokemon = _pokemons[index];
+                        final pokemon = pokemons[index];
                         return _buildPokemonCard(pokemon);
                       },
                     ),
-                  );
-                },
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<PokemonsProvider>().loadMorePokemons();
+                    },
+                    child: const Text('Carregar mais'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
             ),
           ],
@@ -130,11 +108,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -149,7 +123,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              // abrir favoritos futuramente
+            },
             icon: const Icon(Icons.person_outline, color: Colors.black54),
           ),
         ],
@@ -182,8 +158,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   Widget _buildPokemonCard(Pokemon pokemon) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('vc clicou no ${pokemon.name}!')),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (ctx) => PokemonDetailsScreen(pokemon: pokemon),
+          ),
         );
       },
       child: Card(
@@ -194,38 +172,38 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             color: _getPokemonCardColor(pokemon.id),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Hero(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Hero(
                   tag: 'pokemon-${pokemon.id}',
                   child: Image.network(
                     'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png',
-                    height: 200,
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  pokemon.name.toUpperCase(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                pokemon.name.toUpperCase(),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black87,
                 ),
-                Text(
-                  '#${pokemon.id.toString().padLeft(3, '0')}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.normal,
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                '#${pokemon.id.toString().padLeft(3, '0')}',
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -234,23 +212,32 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
   Widget _buildBottomNavigationBar() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 10,
-            offset: const Offset(0, -5),
+            offset: Offset(0, -5),
           ),
         ],
       ),
       child: BottomNavigationBar(
+        currentIndex: _selectedIndex,
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedItemColor: const Color(0xFF6A1B9A),
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+          if (index == 1) {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const FavoritosScreen()));
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -260,10 +247,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             icon: Icon(Icons.favorite_border),
             label: 'Favorites',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profile',

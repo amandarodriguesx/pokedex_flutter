@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/pokemon_list_screen.dart';
-
-class PokemonsProvider with ChangeNotifier {
-}
+import 'package:pokedex_somativo01/providers/favoritos_provider.dart';
+import 'package:pokedex_somativo01/providers/pokemons_provider.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => PokemonsProvider(),
-      child: PokemonsApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PokemonsProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritosProvider()),
+      ],
+      child: const PokemonsApp(),
     ),
   );
 }
