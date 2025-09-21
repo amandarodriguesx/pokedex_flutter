@@ -9,14 +9,14 @@ class PokemonsProvider extends ChangeNotifier {
   final int _limit = 20;
 
   bool _isLoading = false;
+  bool _hasError = false;
 
   bool get isLoading => _isLoading;
-
+  bool get hasError => _hasError;
   List<Pokemon> get pokemons => _pokemons;
 
   Pokemon? searchPokemon(String query) {
     final lowerQuery = query.toLowerCase();
-
     return _pokemons.firstWhereOrNull(
       (p) =>
           p.name.toLowerCase() == lowerQuery || p.id.toString() == lowerQuery,
@@ -27,6 +27,7 @@ class PokemonsProvider extends ChangeNotifier {
     if (_isLoading) return;
 
     _isLoading = true;
+    _hasError = false;
     notifyListeners();
 
     try {
@@ -36,6 +37,7 @@ class PokemonsProvider extends ChangeNotifier {
       );
       _pokemons.addAll(newPokemons);
     } catch (e) {
+      _hasError = true;
       debugPrint('Erro ao carregar Pokémons: $e');
     } finally {
       _isLoading = false;

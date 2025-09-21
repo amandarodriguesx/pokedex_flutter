@@ -58,6 +58,7 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   Widget build(BuildContext context) {
     final pokemons = context.watch<PokemonsProvider>().pokemons;
     final isLoading = context.watch<PokemonsProvider>().isLoading;
+    final hasError = context.watch<PokemonsProvider>().hasError;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F5),
@@ -67,44 +68,52 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             _buildAppBar(),
             _buildSearchField(),
             Expanded(
-              child: isLoading && pokemons.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: GridView.builder(
-                            padding: const EdgeInsets.all(10.0),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1.2,
-                                ),
-                            itemCount: pokemons.length,
-                            itemBuilder: (context, index) {
-                              final pokemon = pokemons[index];
-                              return _buildPokemonCard(pokemon);
-                            },
-                          ),
+              child: Builder(
+                builder: (_) {
+                  if (isLoading && pokemons.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (hasError && pokemons.isEmpty) {
+                    return _buildErrorScreen();
+                  }
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(10.0),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.2,
+                              ),
+                          itemCount: pokemons.length,
+                          itemBuilder: (context, index) {
+                            final pokemon = pokemons[index];
+                            return _buildPokemonCard(pokemon);
+                          },
                         ),
-                        if (isLoading)
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        if (!isLoading)
-                          ElevatedButton(
-                            onPressed: () {
-                              context
-                                  .read<PokemonsProvider>()
-                                  .loadMorePokemons();
-                            },
-                            child: const Text('Carregar mais'),
-                          ),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
+                      ),
+                      if (isLoading)
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      if (!isLoading)
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<PokemonsProvider>().loadMorePokemons();
+                          },
+                          child: const Text('Carregar mais'),
+                        ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -270,6 +279,35 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.cloud_off, size: 60, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
+            'Erro ao se comunicar com o servidor',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Verifique sua conexão com a internet e tente novamente.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<PokemonsProvider>().loadMorePokemons();
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tentar novamente'),
           ),
         ],
       ),
