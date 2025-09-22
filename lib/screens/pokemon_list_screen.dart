@@ -43,9 +43,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         _filteredPokemons = provider.pokemons;
       } else {
         _filteredPokemons = provider.pokemons
-            .where((p) =>
-                p.name.toLowerCase().contains(query.toLowerCase()) ||
-                p.id.toString() == query)
+            .where(
+              (p) =>
+                  p.name.toLowerCase().contains(query.toLowerCase()) ||
+                  p.id.toString() == query,
+            )
             .toList();
       }
     });
@@ -113,11 +115,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           padding: const EdgeInsets.all(10.0),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.2,
-                          ),
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.2,
+                              ),
                           itemCount: _filteredPokemons.length,
                           itemBuilder: (context, index) {
                             final pokemon = _filteredPokemons[index];
@@ -133,10 +135,13 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       if (!isLoading)
                         ElevatedButton(
                           onPressed: () {
-                            context.read<PokemonsProvider>().loadMorePokemons().then((_) {
-                              // Atualiza lista filtrada após carregar mais pokémons
-                              _filterPokemons(_searchController.text);
-                            });
+                            context
+                                .read<PokemonsProvider>()
+                                .loadMorePokemons()
+                                .then((_) {
+                                  // Atualiza lista filtrada após carregar mais pokémons
+                                  _filterPokemons(_searchController.text);
+                                });
                           },
                           child: const Text('Carregar mais'),
                         ),
@@ -172,12 +177,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
               fontSize: 24,
               color: Colors.black87,
             ),
-          ),
-          IconButton(
-            onPressed: () {
-              // abrir favoritos futuramente
-            },
-            icon: const Icon(Icons.person_outline, color: Colors.black54),
           ),
         ],
       ),
@@ -299,9 +298,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         onTap: (index) {
           setState(() => _selectedIndex = index);
           if (index == 1) {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const FavoritosScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const FavoritosScreen()));
           }
         },
         items: const [
@@ -312,11 +311,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_border),
             label: 'Favorites',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
           ),
         ],
       ),
