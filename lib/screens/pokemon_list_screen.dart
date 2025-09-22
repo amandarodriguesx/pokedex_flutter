@@ -15,24 +15,22 @@ class PokemonListScreen extends StatefulWidget {
 class _PokemonListScreenState extends State<PokemonListScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedIndex = 0;
-
   List<Pokemon> _filteredPokemons = [];
+  late Future<void> _initialLoadFuture;
 
   @override
   void initState() {
     super.initState();
+    _initialLoadFuture = _loadInitialData();
+    _searchController.addListener(
+      () => _filterPokemons(_searchController.text),
+    );
+  }
+
+  Future<void> _loadInitialData() async {
     final provider = context.read<PokemonsProvider>();
-
-    provider.loadMorePokemons().then((_) {
-      setState(() {
-        _filteredPokemons = provider.pokemons;
-      });
-    });
-
-    // Faz o filtro enquanto o usuário digita
-    _searchController.addListener(() {
-      _filterPokemons(_searchController.text);
-    });
+    await provider.loadMorePokemons();
+    _filteredPokemons = provider.pokemons;
   }
 
   void _filterPokemons(String query) {
@@ -87,9 +85,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<PokemonsProvider>().isLoading;
-    final hasError = context.watch<PokemonsProvider>().hasError;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF0F0F5),
       body: SafeArea(
@@ -98,13 +93,14 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             _buildAppBar(),
             _buildSearchField(),
             Expanded(
-              child: Builder(
-                builder: (_) {
-                  if (isLoading && _filteredPokemons.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+              child: FutureBuilder(
+                future: _initialLoadFuture,
+                builder: (context, snapshot) {
+                  final isLoading = context.watch<PokemonsProvider>().isLoading;
 
-                  if (hasError && _filteredPokemons.isEmpty) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
                     return _buildErrorScreen();
                   }
 
