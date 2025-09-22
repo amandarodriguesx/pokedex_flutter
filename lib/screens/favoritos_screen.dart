@@ -12,7 +12,7 @@ class FavoritosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pokemons Favoritas')),
+      appBar: AppBar(title: const Text('Pokemons Favoritos')),
       body: Consumer<FavoritosProvider>(
         builder: (context, favoritosProvider, child) {
           final idsFavoritos = favoritosProvider.idsPokemonsFavoritos;
@@ -31,7 +31,7 @@ class FavoritosScreen extends StatelessWidget {
                   Icon(Icons.favorite_border, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
-                    'Você ainda não tem pokemons favoritas.',
+                    'Você ainda não tem pokemons favoritos.',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
@@ -54,7 +54,24 @@ class FavoritosScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.all(10),
                 child: ListTile(
-                  leading: CircleAvatar(child: Text(pokemon.id.toString())),
+                  leading: ClipOval(
+                    child: Image.network(
+                      'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   title: Text(pokemon.name),
                   subtitle: const Text('Clique para ver detalhes'),
                   onTap: () {

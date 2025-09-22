@@ -48,19 +48,7 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
     final isFav = favoritosProvider.isFavorito(widget.pokemon.id);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.pokemon.name),
-        actions: [
-          IconButton(
-            icon: Icon(isFav ? Icons.favorite : Icons.favorite_border),
-            onPressed: () {
-              context.read<FavoritosProvider>().toggleFavorito(
-                widget.pokemon.id,
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(widget.pokemon.name)),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Center(
@@ -83,11 +71,17 @@ class _PokemonDetailsScreenState extends State<PokemonDetailsScreen> {
                   Text('Altura: ${_detailedPokemon.height / 10} m'),
                   Text('Peso: ${_detailedPokemon.weight / 10} kg'),
                   Text('Habilidades: ${_detailedPokemon.abilities.join(', ')}'),
-                  Wrap(
-                    spacing: 8,
-                    children: _detailedPokemon.types
-                        .map((type) => Chip(label: Text(type)))
-                        .toList(),
+                  Text('Tipos: ${_detailedPokemon.types.join(', ')}'),
+                  ButtonTheme(
+                    child: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: isFav ? Colors.red : null,
+                      ),
+                      onPressed: () {
+                        favoritosProvider.toggleFavorito(widget.pokemon.id);
+                      },
+                    ),
                   ),
                 ],
               ),
