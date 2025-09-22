@@ -2,6 +2,8 @@
 
 A new Flutter project.
 
+Integrantes: Miguel Araújo Moura, Amanda Alves Rodrigues e Maria Eduarda Barbosa Lima
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
