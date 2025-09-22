@@ -16,10 +16,39 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
   final TextEditingController _searchController = TextEditingController();
   int _selectedIndex = 0;
 
+  List<Pokemon> _filteredPokemons = [];
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<PokemonsProvider>().loadMorePokemons());
+    final provider = context.read<PokemonsProvider>();
+
+    provider.loadMorePokemons().then((_) {
+      setState(() {
+        _filteredPokemons = provider.pokemons;
+      });
+    });
+
+    // Faz o filtro enquanto o usuário digita
+    _searchController.addListener(() {
+      _filterPokemons(_searchController.text);
+    });
+  }
+
+  void _filterPokemons(String query) {
+    final provider = context.read<PokemonsProvider>();
+
+    setState(() {
+      if (query.isEmpty) {
+        _filteredPokemons = provider.pokemons;
+      } else {
+        _filteredPokemons = provider.pokemons
+            .where((p) =>
+                p.name.toLowerCase().contains(query.toLowerCase()) ||
+                p.id.toString() == query)
+            .toList();
+      }
+    });
   }
 
   Future<void> _searchPokemon() async {
@@ -56,7 +85,6 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pokemons = context.watch<PokemonsProvider>().pokemons;
     final isLoading = context.watch<PokemonsProvider>().isLoading;
     final hasError = context.watch<PokemonsProvider>().hasError;
 
@@ -70,11 +98,11 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
             Expanded(
               child: Builder(
                 builder: (_) {
-                  if (isLoading && pokemons.isEmpty) {
+                  if (isLoading && _filteredPokemons.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (hasError && pokemons.isEmpty) {
+                  if (hasError && _filteredPokemons.isEmpty) {
                     return _buildErrorScreen();
                   }
 
@@ -85,14 +113,14 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                           padding: const EdgeInsets.all(10.0),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1.2,
-                              ),
-                          itemCount: pokemons.length,
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.2,
+                          ),
+                          itemCount: _filteredPokemons.length,
                           itemBuilder: (context, index) {
-                            final pokemon = pokemons[index];
+                            final pokemon = _filteredPokemons[index];
                             return _buildPokemonCard(pokemon);
                           },
                         ),
@@ -105,7 +133,10 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
                       if (!isLoading)
                         ElevatedButton(
                           onPressed: () {
-                            context.read<PokemonsProvider>().loadMorePokemons();
+                            context.read<PokemonsProvider>().loadMorePokemons().then((_) {
+                              // Atualiza lista filtrada após carregar mais pokémons
+                              _filterPokemons(_searchController.text);
+                            });
                           },
                           child: const Text('Carregar mais'),
                         ),
@@ -162,14 +193,21 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           borderRadius: BorderRadius.circular(25.0),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child: const TextField(
+        child: TextField(
+          controller: _searchController,
           decoration: InputDecoration(
             hintText: 'Search Pokémon',
             hintStyle: TextStyle(color: Colors.grey),
             prefixIcon: Icon(Icons.search, color: Colors.grey),
+            suffixIcon: IconButton(
+              icon: Icon(Icons.send, color: Colors.grey),
+              onPressed: _searchPokemon,
+            ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(vertical: 12.0),
           ),
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _searchPokemon(),
         ),
       ),
     );
@@ -261,9 +299,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
         onTap: (index) {
           setState(() => _selectedIndex = index);
           if (index == 1) {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const FavoritosScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FavoritosScreen()),
+            );
           }
         },
         items: const [
@@ -304,7 +342,9 @@ class _PokemonListScreenState extends State<PokemonListScreen> {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () {
-              context.read<PokemonsProvider>().loadMorePokemons();
+              context.read<PokemonsProvider>().loadMorePokemons().then((_) {
+                _filterPokemons(_searchController.text);
+              });
             },
             icon: const Icon(Icons.refresh),
             label: const Text('Tentar novamente'),

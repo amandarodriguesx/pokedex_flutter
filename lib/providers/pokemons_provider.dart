@@ -16,12 +16,14 @@ class PokemonsProvider extends ChangeNotifier {
   List<Pokemon> get pokemons => _pokemons;
 
   Pokemon? searchPokemon(String query) {
-    final lowerQuery = query.toLowerCase();
-    return _pokemons.firstWhereOrNull(
-      (p) =>
-          p.name.toLowerCase() == lowerQuery || p.id.toString() == lowerQuery,
-    );
-  }
+  final lowerQuery = query.toLowerCase();
+  return _pokemons.firstWhereOrNull(
+    (p) =>
+        p.name.toLowerCase().contains(lowerQuery) || 
+        p.id.toString() == lowerQuery,                 
+  );
+}
+
 
   Future<void> loadMorePokemons() async {
     if (_isLoading) return;
